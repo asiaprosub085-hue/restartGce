@@ -34,8 +34,7 @@ public class GceController {
     public ResponseEntity<GceResponse> restartInstance(HttpServletRequest httpServletRequest, @Valid @RequestBody GceRequest request) {
         try {
             RequestLogger.logRequest(httpServletRequest);
-
-            logger.info("获取参数 request=", request.toString());
+            logger.error("获取参数 request=", request.toString());
             GceResponse response = gceService.restartInstance(request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
