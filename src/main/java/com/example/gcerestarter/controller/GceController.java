@@ -37,6 +37,24 @@ public class GceController {
         }
     }
 
+
+    /**
+     * 重启GCE实例并执行健康检查
+     */
+    @GetMapping("/restartGet")
+    public ResponseEntity<GceResponse> restartInstanceGet(GceRequest request) {
+        try {
+            GceResponse response = gceService.restartInstance(request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            GceResponse errorResponse = new GceResponse();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("重启实例失败: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     /**
      * 单独执行健康检查（不重启实例）
      */
