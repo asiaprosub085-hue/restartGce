@@ -4,12 +4,12 @@ import com.example.gcerestarter.model.GceRequest;
 import com.example.gcerestarter.model.GceResponse;
 import com.example.gcerestarter.service.GceService;
 import com.google.api.gax.longrunning.OperationFuture;
+import com.google.cloud.compute.v1.Error;
 import com.google.cloud.compute.v1.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.LocalDateTime;
@@ -116,17 +116,7 @@ public class GceServiceImpl implements GceService {
         }
     }
 
-    /**
-     * 获取GCE实例详情
-     */
-    private Instance getInstance(InstancesClient client, GceRequest request) throws IOException {
-        try {
-            return client.get(request.getProjectId(), request.getZone(), request.getInstanceName());
-        } catch (Exception e) {
-            logger.error("获取实例信息失败: {}", e.getMessage());
-            return null;
-        }
-    }
+
 
     /**
      * 提取实例的外部IP地址
@@ -148,23 +138,204 @@ public class GceServiceImpl implements GceService {
         return null;
     }
 
+    private static final int OPERATION_TIMEOUT_MINUTES = 10; // 延长超时时间至10分钟
+    private static final int STATUS_CHECK_INTERVAL_SECONDS = 15; // 状态检查间隔
+    // 旧版本客户端库中常见的"完成"状态码（根据实际观察值调整）
+    private static final int STATUS_DONE = 1;
+    private static final String STATUS_DONE_STR = "DONE";
+
     /**
      * 重启GCE实例
      */
-    private boolean restartGceInstance(InstancesClient client, GceRequest request)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    private boolean restartGceInstance(InstancesClient instancesClient, GceRequest request) {
+        try {
 
-        ResetInstanceRequest resetRequest = ResetInstanceRequest.newBuilder()
-                .setProject(request.getProjectId())
-                .setZone(request.getZone())
-                .setInstance(request.getInstanceName())
-                .build();
+            // 重启前验证实例
+            Instance preRestartInstance = getInstance(instancesClient, request);
+            if (preRestartInstance == null) {
+                logger.error("实例不存在: {}", request.getInstanceName());
+                return false;
+            }
+            String originalIp = getExternalIp(preRestartInstance);
+            logger.info("重启前 - 实例状态: {}, IP: {}", preRestartInstance.getStatus(), originalIp);
 
-        OperationFuture<Operation, Operation> future = client.resetAsync(resetRequest);
-        Operation operation = future.get(5, TimeUnit.MINUTES); // 5分钟超时
+            // 构建重启请求
+            ResetInstanceRequest resetRequest = ResetInstanceRequest.newBuilder()
+                    .setProject(request.getProjectId())
+                    .setZone(request.getZone())
+                    .setInstance(request.getInstanceName())
+                    .build();
 
-        return operation.getStatus().equals("DONE") &&
-                (operation.getError() == null || operation.getError().getErrorsCount() == 0);
+            // 执行异步重启
+            logger.info("发送重启请求: {}", request.getInstanceName());
+            OperationFuture<Operation, Operation> future = instancesClient.resetAsync(resetRequest);
+
+            // 等待操作完成（适配无getDone()的旧版本）
+            Operation operation = waitForOperationCompletion(future);
+            if (operation == null) {
+                logger.error("重启操作超时（{}分钟）", OPERATION_TIMEOUT_MINUTES);
+                return false;
+            }
+
+            // 检查操作是否成功
+            if (hasOperationError(operation)) {
+                logger.error("重启操作失败 - 错误详情: {}", extractErrorMessage(operation));
+                return false;
+            }
+
+            // 等待实例运行
+            logger.info("重启命令执行完成，等待实例恢复...");
+            Instance postRestartInstance = waitForInstanceRunning(instancesClient, request, 600);
+            if (postRestartInstance == null) {
+                logger.error("实例未进入RUNNING状态");
+                return false;
+            }
+
+            // 验证IP
+            String newIp = getExternalIp(postRestartInstance);
+            if (!originalIp.equals(newIp)) {
+                logger.warn("IP变化 - 原IP: {}, 新IP: {}", originalIp, newIp);
+            } else {
+                logger.info("重启成功 - 状态: {}, IP保持不变: {}",
+                        postRestartInstance.getStatus(), newIp);
+            }
+
+            return true;
+
+
+        } catch (InterruptedException e) {
+            logger.error("操作被中断", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (instancesClient != null) {
+                instancesClient.close();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 等待操作完成（适配无getDone()的情况）
+     */
+    private Operation waitForOperationCompletion(OperationFuture<Operation, Operation> future)
+            throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        long timeoutMillis = TimeUnit.MINUTES.toMillis(OPERATION_TIMEOUT_MINUTES);
+
+        while (System.currentTimeMillis() - startTime < timeoutMillis) {
+            try {
+                // 尝试获取操作状态（短超时，避免阻塞）
+                Operation operation = future.get(1, TimeUnit.SECONDS);
+
+                // 关键：通过状态码或状态字符串判断是否完成
+                if (isOperationDone(operation)) {
+                    logger.info("操作完成 - 状态码: {}, 状态描述: {}",
+                            operation.getStatus(), getStatusMessage(operation));
+                    return operation;
+                }
+
+                // 输出中间状态
+                logger.info("操作进行中 - 状态码: {}, 描述: {}, 已等待: {}秒",
+                        operation.getStatus(),
+                        getStatusMessage(operation),
+                        (System.currentTimeMillis() - startTime) / 1000);
+
+            } catch (TimeoutException e) {
+                // 1秒内未返回，继续等待
+            } catch (ExecutionException e) {
+                logger.error("操作执行异常", e.getCause());
+                return null;
+            }
+
+            Thread.sleep(TimeUnit.SECONDS.toMillis(STATUS_CHECK_INTERVAL_SECONDS));
+        }
+
+        return null;
+    }
+
+    /**
+     * 判断操作是否完成（适配旧版本API）
+     */
+    private boolean isOperationDone(Operation operation) {
+        // 方式1：通过状态码判断（根据实际返回的2104194等码调整）
+        Operation.Status statusCode = operation.getStatus();
+        if (statusCode.getNumber() == STATUS_DONE) {
+            return true;
+        }
+
+        // 方式2：通过状态字符串判断
+        String statusStr = getStatusMessage(operation);
+        if (STATUS_DONE_STR.equalsIgnoreCase(statusStr)) {
+            return true;
+        }
+
+        // 方式3：如果状态码大于某个阈值（根据观察值调整）
+        // 例如：某些版本中，状态码>1000000表示完成
+        return statusCode.getNumber() > 1000000;
+    }
+
+    /**
+     * 检查操作是否有错误
+     */
+    private boolean hasOperationError(Operation operation) {
+        // 旧版本可能通过getErrorsCount()判断
+        return operation.getError().getErrorsCount() > 0;
+    }
+
+    /**
+     * 提取错误信息
+     */
+    private String extractErrorMessage(Operation operation) {
+        if (operation.getError().getErrorsCount() == 0) {
+            return "未知错误";
+        }
+        // 拼接所有错误信息
+        StringBuilder errorMsg = new StringBuilder();
+        Error error = operation.getError();
+        errorMsg.append("[").append(error.toString()).append("] ");
+        return errorMsg.toString();
+    }
+
+    /**
+     * 获取状态描述（兼容不同版本的字段名）
+     */
+    private String getStatusMessage(Operation operation) {
+        // 旧版本可能用getOperationType()或getStatus()的字符串表示
+        try {
+            // 尝试获取状态消息（根据实际API调整）
+            return operation.getStatusMessage();
+        } catch (Exception e) {
+            //  fallback：返回状态码的字符串形式
+            return String.valueOf(operation.getStatus());
+        }
+    }
+
+    // 以下方法与之前相同
+    private Instance waitForInstanceRunning(InstancesClient client, GceRequest request, int maxWaitSeconds)
+            throws InterruptedException {
+        int waitedSeconds = 0;
+        while (waitedSeconds < maxWaitSeconds) {
+            Instance instance = getInstance(client, request);
+            if (instance != null && "RUNNING".equals(instance.getStatus())) {
+                return instance;
+            }
+            Thread.sleep(TimeUnit.SECONDS.toMillis(STATUS_CHECK_INTERVAL_SECONDS));
+            waitedSeconds += STATUS_CHECK_INTERVAL_SECONDS;
+            logger.info("等待实例运行中 - 已等待: {}秒", waitedSeconds);
+        }
+        return null;
+    }
+
+    /**
+     * 获取实例详情
+     */
+    private Instance getInstance(InstancesClient client, GceRequest request) {
+        try {
+            return client.get(request.getProjectId(), request.getZone(), request.getInstanceName());
+        } catch (Exception e) {
+            logger.error("获取实例信息失败", e);
+            return null;
+        }
     }
 
     /**
