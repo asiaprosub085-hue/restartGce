@@ -83,5 +83,18 @@ public class GceRequest {
     public void setRetryDelaySeconds(int retryDelaySeconds) {
         this.retryDelaySeconds = retryDelaySeconds;
     }
+
+    @Override
+    public String toString() {
+        return "GceRequest{" +
+                "projectId='" + projectId + '\'' +
+                ", zone='" + zone + '\'' +
+                ", instanceName='" + instanceName + '\'' +
+                ", healthCheckPort=" + healthCheckPort +
+                ", maxRetries=" + maxRetries +
+                ", initialWaitSeconds=" + initialWaitSeconds +
+                ", retryDelaySeconds=" + retryDelaySeconds +
+                '}';
+    }
 }
     

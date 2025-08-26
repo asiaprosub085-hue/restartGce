@@ -3,11 +3,15 @@ package com.example.gcerestarter.controller;
 import com.example.gcerestarter.model.GceRequest;
 import com.example.gcerestarter.model.GceResponse;
 import com.example.gcerestarter.service.GceService;
+import com.example.gcerestarter.utils.RequestLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -21,12 +25,17 @@ public class GceController {
         this.gceService = gceService;
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(GceController.class);
+
     /**
      * 重启GCE实例并执行健康检查
      */
     @PostMapping("/restart")
-    public ResponseEntity<GceResponse> restartInstance(@Valid @RequestBody GceRequest request) {
+    public ResponseEntity<GceResponse> restartInstance(HttpServletRequest httpServletRequest, @Valid @RequestBody GceRequest request) {
         try {
+            RequestLogger.logRequest(httpServletRequest);
+
+            logger.info("获取参数 request=", request.toString());
             GceResponse response = gceService.restartInstance(request);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
