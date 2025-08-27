@@ -128,8 +128,8 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         // 3. 替换模板变量
         String messageText = String.format(template,
                 map.get("resourceName"),
-                ByteUnitConverter.bytesToMBFormatted(new BigDecimal(map.get("observedValue")).longValue(), 2),
-                ByteUnitConverter.bytesToMBFormatted(new BigDecimal(map.get("thresholdValue")).longValue(), 2),
+                ByteUnitConverter.convertBytes(new BigDecimal(map.get("observedValue")).longValue(), 2),
+                ByteUnitConverter.convertBytes(new BigDecimal(map.get("thresholdValue")).longValue(), 2),
                 map.get("startedAt"));
         message.setText(messageText);
 
