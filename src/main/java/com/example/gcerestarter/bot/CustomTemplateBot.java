@@ -4,6 +4,8 @@ import com.example.gcerestarter.model.GceRequest;
 import com.example.gcerestarter.model.GceResponse;
 import com.example.gcerestarter.service.GceService;
 import com.example.gcerestarter.utils.ByteUnitConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,7 +28,7 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
     private static final String BOT_USERNAME = "yazhou_gaojing_bot";
     // 用于分割参数的分隔符（避免与参数内容冲突）
     private static final String PARAM_DELIMITER = "|";
-
+    private static final Logger logger = LoggerFactory.getLogger(CustomTemplateBot.class);
     @Resource
     private GceService gceService;
 
@@ -43,6 +45,7 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         // 1. 处理用户发送的消息（如/start命令）
+        logger.error("点击重启回调 ： " + update.hasCallbackQuery());
         if (update.hasMessage() && update.getMessage().hasText()) {
             String chatId = update.getMessage().getChatId().toString();
             if (update.getMessage().getText().equals("/start")) {
@@ -54,7 +57,9 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             String callbackData = update.getCallbackQuery().getData();
             String chatId = update.getCallbackQuery().getMessage().getChatId().toString();
             Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
-
+            logger.error("callbackData ： " + callbackData);
+            logger.error("chatId ： " + chatId);
+            logger.error("messageId ： " + messageId);
             try {
                 // 解析回调数据中的参数
                 processCallbackData(chatId, messageId, callbackData);
@@ -158,17 +163,17 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         button1.setText("查看详情");
         button1.setUrl(map.get("url"));
         // 按钮2
-//        InlineKeyboardButton button2 = new InlineKeyboardButton();
-//        button2.setText("重启实例");
-//        button2.setCallbackData("restart"
-//                + "|" + map.get("resourceName")
-//                + "|" + map.get("zone")
-//                + "|" + map.get("projectId"));
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        button2.setText("重启实例");
+        button2.setCallbackData("restart"
+                + "|" + map.get("resourceName")
+                + "|" + map.get("zone")
+                + "|" + map.get("projectId"));
 
         // 添加按钮到行
         List<InlineKeyboardButton> row = new ArrayList<>();
         row.add(button1);
-//        row.add(button2);
+        row.add(button2);
         rows.add(row);
 
         keyboardMarkup.setKeyboard(rows);
