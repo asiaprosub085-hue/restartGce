@@ -40,14 +40,17 @@ public class WebhookController {
             // 2. 提取参数
             JsonObject incident = monitoringPayload.getAsJsonObject("incident");
             if (null == incident || "".equals(incident)) {
+                logger.error("incident 获取异常 ");
                 return ResponseEntity.ok("incident 获取异常");
             }
             JsonObject resource = incident.getAsJsonObject("resource");
             if (null == resource || "".equals(resource)) {
+                logger.error("resouce 获取异常 ");
                 return ResponseEntity.ok("resouce 获取异常");
             }
             JsonObject labels = resource.getAsJsonObject("labels");
             if (null == labels || "".equals(labels)) {
+                logger.error("labels 获取异常 ");
                 return ResponseEntity.ok("labels 获取异常");
             }
             //实例id
@@ -83,6 +86,7 @@ public class WebhookController {
             map.put("chatId", chatId);
             map.put("url", url);
 
+            logger.error("发送通知: " + map.toString());
             customTemplateBot.sendNoticMessage(map);
 
             return ResponseEntity.ok("Webhook processed and forwarded");
