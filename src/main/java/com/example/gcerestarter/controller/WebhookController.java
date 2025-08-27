@@ -76,7 +76,7 @@ public class WebhookController {
             Instant instant = Instant.ofEpochSecond(startedAtLong);
             // 定义日期时间格式和时区
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    .withZone(ZoneId.systemDefault()); // 使用系统默认时区
+                    .withZone(ZoneId.of("Asia/Shanghai")); // 使用系统默认时区
             // 格式化Instant为字符串
             String startedAt = formatter.format(instant);
 
