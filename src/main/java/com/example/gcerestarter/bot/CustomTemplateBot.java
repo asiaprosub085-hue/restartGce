@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,13 +83,11 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
                 // 验证参数数量
                 if (parts.length >= 4) {
                     String resourceName = parts[1];
-                    String instanceId = parts[2];
-                    String zone = parts[3];
+                    String zone = parts[2];
                     String projectId = parts[3];
 
                     GceRequest request = new GceRequest();
                     request.setInstanceName(resourceName);
-                    request.setInstanceId(instanceId);
                     request.setZone(zone);
                     request.setProjectId(projectId);
                     try {
@@ -129,8 +128,8 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         // 3. 替换模板变量
         String messageText = String.format(template,
                 map.get("resourceName"),
-                ByteUnitConverter.bytesToMBFormatted(Long.parseLong(map.get("observedValue")), 2),
-                ByteUnitConverter.bytesToMBFormatted(Long.parseLong(map.get("thresholdValue")), 2),
+                ByteUnitConverter.bytesToMBFormatted(new BigDecimal(map.get("observedValue")).longValue(), 2),
+                ByteUnitConverter.bytesToMBFormatted(new BigDecimal(map.get("thresholdValue")).longValue(), 2),
                 map.get("startedAt"));
         message.setText(messageText);
 
@@ -150,7 +149,6 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         button2.setText("重启实例");
         button2.setCallbackData("restart"
                 + "|" + map.get("resourceName")
-                + "|" + map.get("instanceId")
                 + "|" + map.get("zone")
                 + "|" + map.get("projectId"));
 

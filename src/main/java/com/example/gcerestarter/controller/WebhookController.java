@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,9 +70,16 @@ public class WebhookController {
             //任务名称
             String policyName = incident.get("policy_name").getAsString();
             //时间
-            String startedAt = incident.get("started_at").getAsString();
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            startedAt = dateFormat.format(startedAt);
+            Long startedAtLong = incident.get("started_at").getAsLong();
+
+            // 将时间戳转换为Instant对象
+            Instant instant = Instant.ofEpochSecond(startedAtLong);
+            // 定义日期时间格式和时区
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneId.systemDefault()); // 使用系统默认时区
+            // 格式化Instant为字符串
+            String startedAt = formatter.format(instant);
+
             //详情
             String url = incident.get("url").getAsString();
 
