@@ -158,17 +158,17 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         button1.setText("查看详情");
         button1.setUrl(map.get("url"));
         // 按钮2
-        InlineKeyboardButton button2 = new InlineKeyboardButton();
-        button2.setText("重启实例");
-        button2.setCallbackData("restart"
-                + "|" + map.get("resourceName")
-                + "|" + map.get("zone")
-                + "|" + map.get("projectId"));
+//        InlineKeyboardButton button2 = new InlineKeyboardButton();
+//        button2.setText("重启实例");
+//        button2.setCallbackData("restart"
+//                + "|" + map.get("resourceName")
+//                + "|" + map.get("zone")
+//                + "|" + map.get("projectId"));
 
         // 添加按钮到行
         List<InlineKeyboardButton> row = new ArrayList<>();
         row.add(button1);
-        row.add(button2);
+//        row.add(button2);
         rows.add(row);
 
         keyboardMarkup.setKeyboard(rows);
