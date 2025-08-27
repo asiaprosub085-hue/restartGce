@@ -8,6 +8,8 @@ public class GceRequest {
 
     @NotBlank(message = "项目ID不能为空")
     private String projectId;
+    @NotBlank(message = "项目ID不能为空")
+    private String instanceId;
 
     @NotBlank(message = "区域不能为空")
     private String zone;
@@ -84,17 +86,12 @@ public class GceRequest {
         this.retryDelaySeconds = retryDelaySeconds;
     }
 
-    @Override
-    public String toString() {
-        return "GceRequest{" +
-                "projectId='" + projectId + '\'' +
-                ", zone='" + zone + '\'' +
-                ", instanceName='" + instanceName + '\'' +
-                ", healthCheckPort=" + healthCheckPort +
-                ", maxRetries=" + maxRetries +
-                ", initialWaitSeconds=" + initialWaitSeconds +
-                ", retryDelaySeconds=" + retryDelaySeconds +
-                '}';
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
     }
 }
     
