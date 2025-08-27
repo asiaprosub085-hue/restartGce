@@ -7,6 +7,7 @@ import com.example.gcerestarter.utils.ByteUnitConverter;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -82,6 +83,9 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             case "restart":
                 // 验证参数数量
                 if (parts.length >= 4) {
+                    //点击后删除按钮
+                    handleRemoveButtonAfterClick(chatId, messageId);
+
                     String resourceName = parts[1];
                     String zone = parts[2];
                     String projectId = parts[3];
@@ -103,6 +107,15 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             default:
                 sendResponse(chatId, "未知操作: " + action);
         }
+    }
+
+    private void handleRemoveButtonAfterClick(String chatId, Integer messageId) throws TelegramApiException {
+        // 移除按钮（设置空键盘）
+        EditMessageReplyMarkup editMarkup = new EditMessageReplyMarkup();
+        editMarkup.setChatId(chatId);
+        editMarkup.setMessageId(messageId);
+        editMarkup.setReplyMarkup(null); // 设置为空表示移除键盘
+        execute(editMarkup);
     }
 
     // 发送新消息
