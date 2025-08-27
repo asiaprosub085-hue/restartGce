@@ -91,6 +91,8 @@ public class WebhookController {
 
             return ResponseEntity.ok("Webhook processed and forwarded");
         } catch (Exception e) {
+
+            logger.error("Error processing webhook 获取异常 " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error processing webhook: " + e.getMessage());
         }
