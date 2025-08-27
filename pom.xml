@@ -19,7 +19,6 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <httpclient5.version>5.3</httpclient5.version>
     </properties>
 
     <dependencies>
@@ -54,34 +53,6 @@
             <version>2.0.1.Final</version>
         </dependency>
 
-        <!-- Google Cloud Functions API -->
-        <dependency>
-            <groupId>com.google.cloud.functions</groupId>
-            <artifactId>functions-framework-api</artifactId>
-            <version>1.0.4</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- JSON处理 -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
-        </dependency>
-
-        <!-- Apache HttpClient 5.x -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>${httpclient5.version}</version>
-        </dependency>
-
-        <!-- Apache HttpClient 5.x Fluent API -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5-fluent</artifactId>
-            <version>${httpclient5.version}</version>
-        </dependency>
 
 
     </dependencies>
