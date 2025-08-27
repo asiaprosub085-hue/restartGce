@@ -1,6 +1,5 @@
 package com.example.gcerestarter.controller;
 
-import com.example.gcerestarter.bot.CustomTemplateBot;
 import com.example.gcerestarter.model.GceRequest;
 import com.example.gcerestarter.model.GceResponse;
 import com.example.gcerestarter.service.GceService;
@@ -13,15 +12,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
-
 @RestController
 @RequestMapping("/api/gce")
 public class GceController {
 
     private final GceService gceService;
-    @Resource
-    CustomTemplateBot customTemplateBot;
 
     @Autowired
     public GceController(GceService gceService) {

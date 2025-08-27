@@ -27,8 +27,9 @@ public class GceServiceImpl implements GceService {
         GceResponse response = new GceResponse();
         response.setInstanceName(request.getInstanceName());
         response.setTimestamp(LocalDateTime.now());
-
+        logger.error("restartInstance 1");
         try (InstancesClient instancesClient = InstancesClient.create()) {
+            logger.error("restartInstance 2");
             // 获取重启前的实例信息
             Instance instance = getInstance(instancesClient, request);
             if (instance == null) {
@@ -40,10 +41,10 @@ public class GceServiceImpl implements GceService {
             // 记录原始IP
             String originalIp = getExternalIp(instance);
             response.setOriginalIp(originalIp);
-            logger.info("实例 {} 当前IP: {}", request.getInstanceName(), originalIp);
+            logger.error("实例 {} 当前IP: {}", request.getInstanceName(), originalIp);
 
             // 执行重启
-            logger.info("开始重启实例: {}", request.getInstanceName());
+            logger.error("开始重启实例: {}", request.getInstanceName());
             boolean restartSuccess = restartGceInstance(instancesClient, request);
 
             if (!restartSuccess) {
@@ -53,14 +54,14 @@ public class GceServiceImpl implements GceService {
             }
 
             // 等待实例重启
-            logger.info("等待实例重启完成，等待 {} 秒", request.getInitialWaitSeconds());
+            logger.error("等待实例重启完成，等待 {} 秒", request.getInitialWaitSeconds());
             TimeUnit.SECONDS.sleep(request.getInitialWaitSeconds());
 
             // 获取重启后的实例信息
             Instance restartedInstance = getInstance(instancesClient, request);
             String newIp = getExternalIp(restartedInstance);
             response.setNewIp(newIp);
-            logger.info("实例 {} 重启后IP: {}", request.getInstanceName(), newIp);
+            logger.error("实例 {} 重启后IP: {}", request.getInstanceName(), newIp);
 
             // 执行健康检查
             boolean healthCheckPassed = checkHealth(newIp, request.getHealthCheckPort(),

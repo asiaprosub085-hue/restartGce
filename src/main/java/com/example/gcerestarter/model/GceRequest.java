@@ -93,5 +93,19 @@ public class GceRequest {
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
     }
+
+    @Override
+    public String toString() {
+        return "GceRequest{" +
+                "projectId='" + projectId + '\'' +
+                ", instanceId='" + instanceId + '\'' +
+                ", zone='" + zone + '\'' +
+                ", instanceName='" + instanceName + '\'' +
+                ", healthCheckPort=" + healthCheckPort +
+                ", maxRetries=" + maxRetries +
+                ", initialWaitSeconds=" + initialWaitSeconds +
+                ", retryDelaySeconds=" + retryDelaySeconds +
+                '}';
+    }
 }
     

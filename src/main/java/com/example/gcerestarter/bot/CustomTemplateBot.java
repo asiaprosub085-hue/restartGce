@@ -6,7 +6,8 @@ import com.example.gcerestarter.service.GceService;
 import com.example.gcerestarter.utils.ByteUnitConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
@@ -15,13 +16,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import javax.annotation.Resource;
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Service
+@Component
 public class CustomTemplateBot extends TelegramLongPollingBot {
     // 替换为你的机器人Token和用户名
     private static final String BOT_TOKEN = "8432908571:AAGLoVD7LNglAGHJhXOFk9wRSI0dh-4_OWE";
@@ -29,8 +30,31 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
     // 用于分割参数的分隔符（避免与参数内容冲突）
     private static final String PARAM_DELIMITER = "|";
     private static final Logger logger = LoggerFactory.getLogger(CustomTemplateBot.class);
-    @Resource
-    private GceService gceService;
+    // 1. 注入Service（构造函数注入更安全）
+    private final GceService gceService;
+
+    // 2. 构造函数注入（Spring保证注入完成后才创建实例）
+    @Autowired
+    public CustomTemplateBot(GceService gceService) {
+        this.gceService = gceService;
+    }
+
+    // 静态实例，供外部直接调用
+    private static CustomTemplateBot instance;
+
+    // 初始化时赋值静态实例
+    @PostConstruct
+    public void init() {
+        instance = this;
+        // 这里可以安全访问GceService
+        if (gceService == null) {
+            throw new RuntimeException("GceService注入失败");
+        }
+    }
+
+    public static CustomTemplateBot getInstance() {
+        return instance;
+    }
 
     @Override
     public String getBotToken() {
@@ -49,6 +73,12 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String chatId = update.getMessage().getChatId().toString();
             if (update.getMessage().getText().equals("/start")) {
+                try {
+                    sendResponse(chatId, chatId);
+                } catch (TelegramApiException e) {
+                    System.err.println("发送消息失败: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }
         // 2. 处理按钮回调事件（用户点击按钮时触发）
@@ -57,9 +87,6 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             String callbackData = update.getCallbackQuery().getData();
             String chatId = update.getCallbackQuery().getMessage().getChatId().toString();
             Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
-            logger.error("callbackData ： " + callbackData);
-            logger.error("chatId ： " + chatId);
-            logger.error("messageId ： " + messageId);
             try {
                 // 解析回调数据中的参数
                 processCallbackData(chatId, messageId, callbackData);
@@ -99,11 +126,13 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
                     request.setInstanceName(resourceName);
                     request.setZone(zone);
                     request.setProjectId(projectId);
+                    logger.error("request ： " + request.toString());
+                    logger.error("gceService ： " + gceService);
                     try {
                         GceResponse response = gceService.restartInstance(request);
-                        sendResponse(chatId, "实例重启完成: " + response.getMessage());
+                        sendResponse(chatId, "实例: " + resourceName + " , 重启完成: " + response.getMessage());
                     } catch (Exception e) {
-                        sendResponse(chatId, "实例重启异常: " + e.getMessage());
+                        sendResponse(chatId, "实例: " + resourceName + " , 重启异常: " + e.getMessage());
                     }
                 } else {
                     sendResponse(chatId, "商品参数不完整");
@@ -131,11 +160,10 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         execute(message);
     }
 
-    public void sendNoticMessage(Map<String, String> map) throws TelegramApiException {
+    public static void sendNoticMessage(Map<String, String> map) throws TelegramApiException {
         // 1. 创建消息对象
         SendMessage message = new SendMessage();
         message.setChatId(map.get("chatId"));
-
         // 2. 定义消息模板（支持HTML格式化）
         String template = "♨️♨️ 异常告警 " +
                 " 实例名: <b>%s</b>，\n\n" +
@@ -179,7 +207,12 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         keyboardMarkup.setKeyboard(rows);
         message.setReplyMarkup(keyboardMarkup);
 
-        // 6. 发送消息
-        execute(message);
+        try {
+            // 6. 发送消息
+            instance.execute(message);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException("消息发送失败: " + e.getMessage());
+        }
+
     }
 }

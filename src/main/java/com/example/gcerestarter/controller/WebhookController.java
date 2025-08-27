@@ -24,13 +24,10 @@ public class WebhookController {
     private static final Gson gson = new Gson();
     private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
     @Resource
-    CustomTemplateBot customTemplateBot;
+    GceService gceService;
 
     //消息群id
     private static final String chatId = "-1003008517484";
-    @Resource
-    private GceService gceService;
-
     // 自定义路径：Monitoring将调用这个路径（例如 /transform）
     @PostMapping("/transform")
     public ResponseEntity<String> handleWebhook(@RequestBody String requestBody) {
@@ -96,7 +93,7 @@ public class WebhookController {
             map.put("url", url);
 
             logger.error("发送通知: " + map.toString());
-            customTemplateBot.sendNoticMessage(map);
+            CustomTemplateBot.sendNoticMessage(map);
 
             return ResponseEntity.ok("Webhook processed and forwarded");
         } catch (Exception e) {
