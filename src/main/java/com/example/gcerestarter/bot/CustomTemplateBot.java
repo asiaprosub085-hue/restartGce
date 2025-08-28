@@ -165,7 +165,7 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(map.get("chatId"));
         // 2. 定义消息模板（支持HTML格式化）
-        String template = "♨️♨️ 异常告警 " +
+        String template = "♨️♨️ %s " +
                 " 实例名: <b>%s</b>，\n\n" +
                 " 异常值: %s\n" +
                 " 限制值: %s\n" +
@@ -173,6 +173,7 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
 
         // 3. 替换模板变量
         String messageText = String.format(template,
+                map.get("policyName"),
                 map.get("resourceName"),
                 ByteUnitConverter.convertBytes(new BigDecimal(map.get("observedValue")).longValue(), 2),
                 ByteUnitConverter.convertBytes(new BigDecimal(map.get("thresholdValue")).longValue(), 2),
@@ -191,17 +192,17 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         button1.setText("查看详情");
         button1.setUrl(map.get("url"));
         // 按钮2
-        InlineKeyboardButton button2 = new InlineKeyboardButton();
-        button2.setText("重启实例");
-        button2.setCallbackData("restart"
-                + "|" + map.get("resourceName")
-                + "|" + map.get("zone")
-                + "|" + map.get("projectId"));
+//        InlineKeyboardButton button2 = new InlineKeyboardButton();
+//        button2.setText("重启实例");
+//        button2.setCallbackData("restart"
+//                + "|" + map.get("resourceName")
+//                + "|" + map.get("zone")
+//                + "|" + map.get("projectId"));
 
         // 添加按钮到行
         List<InlineKeyboardButton> row = new ArrayList<>();
         row.add(button1);
-        row.add(button2);
+//        row.add(button2);
         rows.add(row);
 
         keyboardMarkup.setKeyboard(rows);
