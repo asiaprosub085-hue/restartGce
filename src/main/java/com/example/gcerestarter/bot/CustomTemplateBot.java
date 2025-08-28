@@ -222,6 +222,14 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             return String.format("%." + 2 + "f MB", values);
         } else if (name.contains("流量异常告警")) {
             return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
+        } else if (name.contains("流量cpu综合监控告警")) {
+            BigDecimal bigDecimal = new BigDecimal(value);
+            if (bigDecimal.doubleValue() > 1) {
+                return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
+            } else {
+                String values = new BigDecimal(value).multiply(new BigDecimal(100)) + "%";
+                return String.format("%." + 2 + "f MB", values);
+            }
         }
         return value;
     }
