@@ -218,7 +218,7 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
 
     public static String replaceValue(String name, String value) {
         if (name.contains("cpu异常告警")) {
-            return value + "%";
+            return new BigDecimal(value).multiply(new BigDecimal(100)) + "%";
         } else if (name.contains("流量异常告警")) {
             return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
         }
