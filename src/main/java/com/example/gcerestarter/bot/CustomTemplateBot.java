@@ -218,8 +218,8 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
 
     public static String replaceValue(String name, String value) {
         if (name.contains("cpu异常告警")) {
-            String values = new BigDecimal(value).multiply(new BigDecimal(100)) + "%";
-            return String.format("%." + 2 + "f MB", values);
+            double values = new BigDecimal(value).multiply(new BigDecimal(100)).doubleValue();
+            return String.format("%." + 2 + "f %", values);
         } else if (name.contains("流量异常告警")) {
             return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
         } else if (name.contains("流量cpu综合监控告警")) {
@@ -227,8 +227,8 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             if (bigDecimal.doubleValue() > 1) {
                 return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
             } else {
-                String values = new BigDecimal(value).multiply(new BigDecimal(100)) + "%";
-                return String.format("%." + 2 + "f MB", values);
+                double values = new BigDecimal(value).multiply(new BigDecimal(100)).doubleValue();
+                return String.format("%." + 2 + "f %", values);
             }
         }
         return value;
