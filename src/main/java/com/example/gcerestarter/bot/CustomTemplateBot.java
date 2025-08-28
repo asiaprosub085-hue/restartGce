@@ -165,18 +165,18 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(map.get("chatId"));
         // 2. 定义消息模板（支持HTML格式化）
-        String template = "♨️♨️ %s " +
-                " 实例名: <b>%s</b>，\n\n" +
-                " 异常值: %s\n" +
-                " 限制值: %s\n" +
+        String template = "♨️♨️ %s \n" +
+                " 实例名: <b>%s</b> \n" +
+                " 异常值: %s \n" +
+                " 限制值: %s \n" +
                 " 异常时间:：<i>%s</i>\n\n";
 
         // 3. 替换模板变量
         String messageText = String.format(template,
                 map.get("policyName"),
                 map.get("resourceName"),
-                ByteUnitConverter.convertBytes(new BigDecimal(map.get("observedValue")).longValue(), 2),
-                ByteUnitConverter.convertBytes(new BigDecimal(map.get("thresholdValue")).longValue(), 2),
+                replaceValue(map.get("policyName"), map.get("observedValue")),
+                replaceValue(map.get("policyName"), map.get("thresholdValue")),
                 map.get("startedAt"));
         message.setText(messageText);
 
@@ -214,6 +214,14 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             throw new RuntimeException("消息发送失败: " + e.getMessage());
         }
+    }
 
+    public static String replaceValue(String name, String value) {
+        if (name.contains("cpu异常告警")) {
+            return value + "%";
+        } else if (name.contains("流量异常告警")) {
+            return ByteUnitConverter.convertBytes(new BigDecimal(value).longValue(), 2);
+        }
+        return value;
     }
 }
