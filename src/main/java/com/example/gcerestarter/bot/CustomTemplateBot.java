@@ -221,11 +221,11 @@ public class CustomTemplateBot extends TelegramLongPollingBot {
             double values = new BigDecimal(value).multiply(new BigDecimal(100)).doubleValue();
             return String.format("%." + 2 + "f", values) + "%";
         } else if (name.contains("流量异常告警")) {
-            return ByteUnitConverter.convertBytes(new BigDecimal(value).divide(new BigDecimal(60), BigDecimal.ROUND_UP).longValue(), 2) + "/s";
+            return ByteUnitConverter.convertBytes(new BigDecimal(value).divide(new BigDecimal(60), 2, BigDecimal.ROUND_UP).longValue(), 2) + "/s";
         } else if (name.contains("流量cpu综合监控告警")) {
             BigDecimal bigDecimal = new BigDecimal(value);
             if (bigDecimal.doubleValue() > 1) {
-                return ByteUnitConverter.convertBytes(new BigDecimal(value).divide(new BigDecimal(60), BigDecimal.ROUND_UP).longValue(), 2) + "/s";
+                return ByteUnitConverter.convertBytes(new BigDecimal(value).divide(new BigDecimal(60), 2, BigDecimal.ROUND_UP).longValue(), 2) + "/s";
             } else {
                 double values = new BigDecimal(value).multiply(new BigDecimal(100)).doubleValue();
                 return String.format("%." + 2 + "f", values) + "%";
